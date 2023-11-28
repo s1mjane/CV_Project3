@@ -1,6 +1,11 @@
+// 소리 X 터미널 출력 대체 (재인 code in Mac)
+// Line256!까지 출력되고 멈춤 (라인 벗어남 끝)
+// 다시 라인 잡히면 257부터 출력 ~ 438까지 하고 라인 벗어남 끝나면 다시 중지
+// -> end of video 출력
 
 #include <iostream>
 #include <opencv2/opencv.hpp>
+// #include <Windows.h> // Include Windows.h for Beep function
 
 using namespace std;
 using namespace cv;
@@ -18,10 +23,13 @@ int main() {
     Point p1, p2;
     Point p3, p4;
     vector<Vec2f> lines1, lines2;
+    int i=1;
 
-    Rect lane_roi(705, 500, 200, 200);  // ROI to detect lane departure
+    // ROI to detect lane departure
+    Rect lane_roi(600, 800, 400, 700); 
 
-    if (cap.open("road.mp4") == 0) {
+
+    if (cap.open("road2.mp4") == 0) {
         cout << "no such file!" << endl;
         waitKey(0);
     }
@@ -35,22 +43,7 @@ int main() {
             break;
         }
 
-        Mat ycrcb;
-        cvtColor(frame, ycrcb, COLOR_BGR2YCrCb);
-
-        // Split into channels
-        vector<Mat> channels;
-        split(ycrcb, channels);
-
-        // Apply histogram equalization to the Y channel
-        equalizeHist(channels[0], channels[0]);
-
-        // Merge the channels
-        merge(channels, ycrcb);
-
-        // Convert back to BGR color space
-        cvtColor(ycrcb, frame, COLOR_YCrCb2BGR);
-
+        rotate(frame, frame, ROTATE_90_CLOCKWISE);
 
         // lane departure
         canny_left = frame(lane_roi);
@@ -61,7 +54,7 @@ int main() {
         rectangle(frame, lane_roi, Scalar(255, 0, 0), 2);
 
         imshow("canny", canny_left);
-        HoughLines(canny_left, lines1, 1, CV_PI / 180, 60, 0, 0, -CV_PI / 180 * 15, CV_PI / 180 * 20);
+        HoughLines(canny_left, lines1, 1, CV_PI / 180, 250, 0, 0, -CV_PI / 180 * 15, CV_PI / 180 * 20);
 
         if (lines1.size()) {
             total_rho = 0;
@@ -89,8 +82,11 @@ int main() {
         }
 
         if (showText) {
-            putText(frame, "Lane Departure", Point(50, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
+            // Beep(1000, 500);  // Beep sound for 500 milliseconds
+            cout << "Line" << i << "!" << endl;
+
             frameCount++;
+            i++;
             if (frameCount > fps) {
                 showText = false;
             }
@@ -98,7 +94,7 @@ int main() {
 
 
         imshow("Frame", frame);
-        waitKey(1000 / fps);
+        waitKey(500 / fps);
 
     }
 }
